@@ -13,18 +13,21 @@
         
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
             min-height: 100vh;
             padding: 20px;
+            color: #e8e8e8;
         }
         
         .container {
             max-width: 800px;
             margin: 0 auto;
-            background: white;
+            background: rgba(52, 73, 94, 0.95);
             border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
             overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
         }
         
         .header {
@@ -76,7 +79,19 @@
             transition: border-color 0.3s;
         }
         
-        .name-input input:focus {
+        .name-input select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .name-input select:focus {
             border-color: #37003c;
             outline: none;
         }
@@ -139,6 +154,7 @@
         
         .prediction-area {
             padding: 30px;
+            background: rgba(52, 73, 94, 0.95);
         }
         
         .table-header {
@@ -155,9 +171,21 @@
         
         .dropdown-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: 1fr 1fr;
             gap: 15px;
             margin-bottom: 30px;
+        }
+        
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
         
         .position-select {
@@ -205,9 +233,62 @@
             font-weight: bold;
         }
         
-        /* Custom styling for selected dropdown values */
-        .position-select select option {
+        /* Custom searchable dropdown styling */
+        .searchable-dropdown {
+            position: relative;
+            flex: 1;
+        }
+        
+        .searchable-input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            outline: none;
             font-weight: bold;
+            cursor: text;
+            padding: 8px 0;
+            min-width: 200px;
+        }
+        
+        .dropdown-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .dropdown-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-weight: bold;
+        }
+        
+        .dropdown-option:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .dropdown-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #f5f5f5;
+        }
+        
+        .points-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 0;
+            min-width: auto;
         }
         
         .points-input {
@@ -253,11 +334,11 @@
             top: 10px;
             left: 15px;
             font-size: 12px;
-            color: #999;
-            opacity: 0.7;
+            color: rgba(236, 240, 241, 0.7);
+            opacity: 0.8;
             font-style: italic;
             z-index: 10;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(44, 62, 80, 0.6);
             padding: 2px 6px;
             border-radius: 4px;
         }
@@ -357,14 +438,15 @@
             height: 35px;
             margin-right: 15px;
             border-radius: 6px;
-            border: 2px solid #ddd;
+            border: 2px solid rgba(255, 255, 255, 0.8);
             flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
         
         .team-name {
             font-size: 16px;
             font-weight: 500;
-            color: #333;
+            color: #000000;
         }
         
         .hidden {
@@ -394,7 +476,7 @@
     <div class="container">
         <div class="header">
             <div class="header-watermark">Created by Yean</div>
-            <h1>⚽ Premier League Predictor</h1>
+            <h1>⚽ Premier League Table Predictor</h1>
             <p>Create your own Premier League table prediction</p>
         </div>
         
@@ -404,10 +486,18 @@
                 <input type="text" id="predictorName" placeholder="Enter name" />
             </div>
             
+            <div class="name-input">
+                <label for="favoriteClub">Favorite Club:</label>
+                <div class="searchable-dropdown" id="favoriteClubContainer">
+                    <input type="text" class="searchable-input" id="favoriteClub" placeholder="Type your favorite club name" autocomplete="off" />
+                    <div class="dropdown-options" id="favoriteClubOptions"></div>
+                </div>
+            </div>
+            
             <div class="button-group">
                 <button class="btn btn-random" onclick="randomizeTable()">🎲 Random Prediction</button>
                 <button class="btn btn-generate" onclick="generateTable()">📊 Generate Table</button>
-                <button class="btn btn-clear" onclick="clearAll()">🗑️ Clear All</button>
+                <button class="btn btn-clear" onclick="safeClearAll()">🗑️ Clear All</button>
             </div>
         </div>
         
@@ -421,12 +511,14 @@
             <button class="btn btn-download hidden" id="downloadBtn" onclick="downloadTableImage()" style="width: 100%; margin-bottom: 20px;">📷 Download Image</button>
             
             <div class="final-table hidden" id="finalTable">
-                <div class="table-title" id="finalTableTitle">
-                    <div class="table-title-watermark">Created by Yean</div>
-                    Prediction Table
-                </div>
-                <div class="table-content" id="tableContent">
-                    <!-- Final table will be generated here -->
+                <div class="table-border-wrapper">
+                    <div class="table-title" id="finalTableTitle">
+                        <div class="table-title-watermark">Created by Yean</div>
+                        Prediction Table
+                    </div>
+                    <div class="table-content" id="tableContent">
+                        <!-- Final table will be generated here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -463,40 +555,51 @@
             const grid = document.getElementById('dropdownGrid');
             grid.innerHTML = '';
 
+            // Create two columns
+            const leftColumn = document.createElement('div');
+            leftColumn.className = 'left-column';
+            
+            const rightColumn = document.createElement('div');
+            rightColumn.className = 'right-column';
+
             for (let i = 0; i < 20; i++) {
                 const positionDiv = document.createElement('div');
-                positionDiv.className = i === 0 ? 'position-select first-place' : (i === 19 ? 'position-select last-place' : 'position-select');
+                positionDiv.className = i === 0 ? 'position-select first-place' : (i === 17 ? 'position-select last-place' : 'position-select');
                 
                 const positionNumber = document.createElement('div');
                 positionNumber.className = 'position-number';
                 positionNumber.textContent = i + 1;
                 
-                const select = document.createElement('select');
-                select.id = `select-${i}`;
-                select.addEventListener('change', function() {
-                    updateTeamSelection(i, this.value);
-                    updateSelectColor(this, this.value);
-                });
+                // Create searchable dropdown instead of regular select
+                const dropdownContainer = document.createElement('div');
+                dropdownContainer.className = 'searchable-dropdown';
                 
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = i === 0 ? 'Select team for 1st place' : `Select team for position ${i + 1}`;
-                select.appendChild(defaultOption);
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'searchable-input';
+                input.id = `input-${i}`;
+                input.placeholder = `Type team for ${getOrdinal(i + 1)} place`;
+                input.autocomplete = 'off';
                 
-                teams.forEach(team => {
-                    const option = document.createElement('option');
-                    option.value = team.name;
-                    option.textContent = `⬤ ${team.name}`;
-                    option.style.color = team.color;
-                    option.setAttribute('data-color', team.color);
-                    select.appendChild(option);
-                });
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = 'dropdown-options';
+                optionsDiv.id = `options-${i}`;
+                
+                dropdownContainer.appendChild(input);
+                dropdownContainer.appendChild(optionsDiv);
+                
+                // Add event listeners for search functionality
+                setupSearchableDropdown(input, optionsDiv, i);
                 
                 positionDiv.appendChild(positionNumber);
                 
                 if (i === 0) {
-                    select.style.flex = '1';
-                    positionDiv.appendChild(select);
+                    // Create a top row container for position 1
+                    const topRow = document.createElement('div');
+                    topRow.className = 'top-row';
+                    dropdownContainer.style.flex = '1';
+                    topRow.appendChild(dropdownContainer);
+                    positionDiv.appendChild(topRow);
                     
                     const pointsDiv = document.createElement('div');
                     pointsDiv.className = 'points-input';
@@ -515,85 +618,183 @@
                     pointsDiv.appendChild(pointsLabel);
                     pointsDiv.appendChild(pointsInput);
                     positionDiv.appendChild(pointsDiv);
-                } else if (i === 19) {
-                    select.style.flex = '1';
-                    positionDiv.appendChild(select);
+                } else if (i === 17) {
+                    // Create a top row container for position 18 (relegation)
+                    const topRow = document.createElement('div');
+                    topRow.className = 'top-row';
+                    dropdownContainer.style.flex = '1';
+                    topRow.appendChild(dropdownContainer);
+                    positionDiv.appendChild(topRow);
                     
                     const pointsDiv = document.createElement('div');
                     pointsDiv.className = 'points-input';
                     
                     const pointsLabel = document.createElement('label');
-                    pointsLabel.setAttribute('for', 'loserPoints');
-                    pointsLabel.textContent = 'Points relegated:';
+                    pointsLabel.setAttribute('for', 'relegationPoints');
+                    pointsLabel.textContent = 'Points for relegation:';
                     
                     const pointsInput = document.createElement('input');
                     pointsInput.type = 'number';
-                    pointsInput.id = 'loserPoints';
-                    pointsInput.placeholder = '25';
-                    pointsInput.min = '0';
+                    pointsInput.id = 'relegationPoints';
+                    pointsInput.placeholder = '35';
+                    pointsInput.min = '20';
                     pointsInput.max = '50';
                     
                     pointsDiv.appendChild(pointsLabel);
                     pointsDiv.appendChild(pointsInput);
                     positionDiv.appendChild(pointsDiv);
+                } else if (i === 19) {
+                    positionDiv.classList.remove('last-place');
+                    positionDiv.appendChild(dropdownContainer);
                 } else {
-                    positionDiv.appendChild(select);
+                    positionDiv.appendChild(dropdownContainer);
                 }
                 
-                grid.appendChild(positionDiv);
+                // Add to appropriate column (0-9 go to left, 10-19 go to right)
+                if (i < 10) {
+                    leftColumn.appendChild(positionDiv);
+                } else {
+                    rightColumn.appendChild(positionDiv);
+                }
             }
+            
+            // Append columns to grid
+            grid.appendChild(leftColumn);
+            grid.appendChild(rightColumn);
         }
 
-        function updateSelectColor(select, teamName) {
-            if (teamName) {
-                const team = teams.find(t => t.name === teamName);
-                if (team) {
-                    select.style.color = team.color;
+        function getOrdinal(num) {
+            const suffixes = ["th", "st", "nd", "rd"];
+            const v = num % 100;
+            return num + (suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]);
+        }
+
+        function setupSearchableDropdown(input, optionsDiv, position) {
+            let selectedTeam = null;
+
+            // Populate options
+            function populateOptions(filter = '') {
+                optionsDiv.innerHTML = '';
+                const filteredTeams = teams.filter(team => 
+                    team.name.toLowerCase().includes(filter.toLowerCase()) &&
+                    !selectedTeams.includes(team.name)
+                );
+
+                filteredTeams.forEach(team => {
+                    const option = document.createElement('div');
+                    option.className = 'dropdown-option';
+                    option.textContent = `⬤ ${team.name}`;
+                    option.style.color = team.color;
+                    option.setAttribute('data-team', team.name);
+                    option.setAttribute('data-color', team.color);
+
+                    option.addEventListener('click', function() {
+                        selectTeam(team.name, team.color);
+                    });
+
+                    optionsDiv.appendChild(option);
+                });
+
+                if (filteredTeams.length === 0 && filter) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'dropdown-option';
+                    noResults.textContent = 'No teams found';
+                    noResults.style.fontStyle = 'italic';
+                    noResults.style.color = '#666';
+                    optionsDiv.appendChild(noResults);
                 }
-            } else {
-                select.style.color = '#333';
             }
+
+            function selectTeam(teamName, teamColor) {
+                // Clear previous selection
+                if (selectedTeam) {
+                    const prevIndex = selectedTeams.indexOf(selectedTeam);
+                    if (prevIndex !== -1) {
+                        selectedTeams[prevIndex] = null;
+                    }
+                }
+                
+                input.value = teamName;
+                input.style.color = teamColor;
+                selectedTeam = teamName;
+                input.selectedTeam = teamName;
+                optionsDiv.style.display = 'none';
+                
+                // Update the global selectedTeams array
+                selectedTeams[position] = teamName;
+                updateHeaderText();
+            }
+
+            // Event listeners
+            input.addEventListener('focus', function() {
+                populateOptions(input.value);
+                optionsDiv.style.display = 'block';
+            });
+
+            input.addEventListener('input', function() {
+                const filter = input.value;
+                populateOptions(filter);
+                optionsDiv.style.display = 'block';
+                
+                // Clear selection if input doesn't match exactly
+                if (selectedTeam && selectedTeam !== filter) {
+                    selectedTeam = null;
+                    input.selectedTeam = null;
+                    input.style.color = '#333';
+                    selectedTeams[position] = null;
+                    updateHeaderText();
+                }
+            });
+
+            input.addEventListener('blur', function() {
+                setTimeout(() => {
+                    optionsDiv.style.display = 'none';
+                    
+                    // If input doesn't match a valid team, clear it
+                    if (selectedTeam !== input.value) {
+                        const exactMatch = teams.find(team => team.name.toLowerCase() === input.value.toLowerCase());
+                        if (exactMatch && !selectedTeams.includes(exactMatch.name)) {
+                            selectTeam(exactMatch.name, exactMatch.color);
+                        } else {
+                            input.value = selectedTeam || '';
+                            input.style.color = selectedTeam ? teams.find(t => t.name === selectedTeam)?.color || '#333' : '#333';
+                        }
+                    }
+                }, 200);
+            });
+
+            // Store reference for external access
+            input.selectedTeam = null;
+            input.clearSelection = function() {
+                selectedTeam = null;
+                input.selectedTeam = null;
+                input.value = '';
+                input.style.color = '#333';
+                selectedTeams[position] = null;
+                updateHeaderText();
+            };
+
+            input.setTeam = function(teamName) {
+                const team = teams.find(t => t.name === teamName);
+                if (team && !selectedTeams.includes(teamName)) {
+                    selectTeam(team.name, team.color);
+                }
+            };
         }
 
         function updateTeamSelection(position, teamName) {
-            const previousTeam = selectedTeams[position];
-            selectedTeams[position] = teamName || null;
-
-            if (previousTeam) {
-                enableTeamInAllDropdowns(previousTeam);
-            }
-
-            if (teamName) {
-                disableTeamInOtherDropdowns(teamName, position);
-            }
-
-            updateHeaderText();
+            // This function is no longer needed as the searchable dropdowns handle team selection directly
+            // Keeping it empty to avoid breaking any references
         }
 
         function disableTeamInOtherDropdowns(teamName, currentPosition) {
-            for (let i = 0; i < 20; i++) {
-                if (i !== currentPosition) {
-                    const select = document.getElementById(`select-${i}`);
-                    const options = select.querySelectorAll('option');
-                    options.forEach(option => {
-                        if (option.value === teamName) {
-                            option.disabled = true;
-                        }
-                    });
-                }
-            }
+            // This function is now handled automatically by the search filtering
+            // Teams that are already selected won't appear in other dropdown options
         }
 
         function enableTeamInAllDropdowns(teamName) {
-            for (let i = 0; i < 20; i++) {
-                const select = document.getElementById(`select-${i}`);
-                const options = select.querySelectorAll('option');
-                options.forEach(option => {
-                    if (option.value === teamName) {
-                        option.disabled = false;
-                    }
-                });
-            }
+            // This function is now handled automatically by the search filtering
+            // When a team is deselected, it becomes available in all other dropdowns
         }
 
         function updateHeaderText() {
@@ -601,16 +802,18 @@
             const header = document.getElementById('tableHeader');
             
             if (predictorName.trim()) {
-                header.textContent = `${predictorName}'s Premier League Prediction`;
+                header.textContent = `${predictorName}'s Premier League Table Prediction`;
             } else {
-                header.textContent = 'Premier League Prediction';
+                header.textContent = 'Premier League Table Prediction';
             }
         }
 
         function generateTable() {
             const predictorName = document.getElementById('predictorName').value;
+            const favoriteClubElement = document.getElementById('favoriteClub');
+            const favoriteTeam = favoriteClubElement ? favoriteClubElement.value : '';
             const winnerPoints = document.getElementById('winnerPoints').value;
-            const loserPoints = document.getElementById('loserPoints').value;
+            const relegationPoints = document.getElementById('relegationPoints').value;
             const finalTable = document.getElementById('finalTable');
             const finalTableTitle = document.getElementById('finalTableTitle');
             const tableContent = document.getElementById('tableContent');
@@ -621,12 +824,13 @@
                 return;
             }
 
-            let titleText = predictorName.trim() ? `${predictorName}'s Premier League Prediction` : 'Premier League Prediction';
+            let titleText = predictorName.trim() ? `${predictorName}'s Premier League Table Prediction` : 'Premier League Table Prediction';
             finalTableTitle.innerHTML = `<div class="table-title-watermark">Created by Yean</div>${titleText}`;
 
             tableContent.innerHTML = '';
             selectedTeams.forEach((teamName, index) => {
                 const team = teams.find(t => t.name === teamName);
+                
                 if (team) {
                     const row = document.createElement('div');
                     row.className = 'table-row';
@@ -642,12 +846,19 @@
                     colorBadge.className = 'team-color-badge';
                     colorBadge.style.backgroundColor = team.color;
                     
-                    const teamName = document.createElement('span');
-                    teamName.className = 'team-name';
-                    teamName.textContent = team.name;
+                    const teamNameSpan = document.createElement('span');
+                    teamNameSpan.className = 'team-name';
+                    
+                    // Check if this is the user's favorite team and add star emoji
+                    if (teamName === favoriteTeam) {
+                        teamNameSpan.textContent = `${teamName} ⭐`;
+                        row.title = 'Your favorite club';
+                    } else {
+                        teamNameSpan.textContent = teamName;
+                    }
                     
                     teamInfo.appendChild(colorBadge);
-                    teamInfo.appendChild(teamName);
+                    teamInfo.appendChild(teamNameSpan);
                     
                     row.appendChild(position);
                     row.appendChild(teamInfo);
@@ -661,12 +872,12 @@
                         row.appendChild(pointsDisplay);
                     }
                     
-                    if (index === 19 && loserPoints && loserPoints.trim()) {
+                    if (index === 17 && relegationPoints && relegationPoints.trim()) {
                         const pointsDisplay = document.createElement('span');
                         pointsDisplay.style.marginLeft = 'auto';
                         pointsDisplay.style.fontWeight = 'bold';
                         pointsDisplay.style.color = '#37003c';
-                        pointsDisplay.textContent = `${loserPoints} pts`;
+                        pointsDisplay.textContent = `${relegationPoints} pts`;
                         row.appendChild(pointsDisplay);
                     }
                     
@@ -675,34 +886,82 @@
             });
 
             finalTable.classList.remove('hidden');
+            
+            // Create gradient border using background and padding approach
+            finalTable.style.background = 'linear-gradient(135deg, #37003c, #00ff85, #3498db)';
+            finalTable.style.padding = '4px';
+            finalTable.style.borderRadius = '15px';
+            finalTable.style.border = 'none';
+            finalTable.style.position = 'relative';
+            finalTable.style.zIndex = '1000';
+            finalTable.style.isolation = 'isolate';
+            
+            // Make sure the inner content has the right background
+            const tableTitleEl = document.getElementById('finalTableTitle');
+            const tableContentEl = document.getElementById('tableContent');
+            if (tableTitleEl) {
+                tableTitleEl.style.margin = '0';
+                tableTitleEl.style.borderRadius = '11px 11px 0 0';
+                tableTitleEl.style.position = 'relative';
+                tableTitleEl.style.zIndex = '1001';
+            }
+            if (tableContentEl) {
+                tableContentEl.style.margin = '0';
+                tableContentEl.style.borderRadius = '0 0 11px 11px';
+                tableContentEl.style.position = 'relative';
+                tableContentEl.style.zIndex = '1001';
+                tableContentEl.style.overflow = 'hidden';
+            }
+            
             document.getElementById('downloadBtn').classList.remove('hidden');
             finalTable.scrollIntoView({ behavior: 'smooth' });
         }
 
         function randomizeTable() {
-            clearAll();
+            // Clear all first
+            selectedTeams = new Array(20).fill(null);
+
+            // Clear all inputs
+            for (let i = 0; i < 20; i++) {
+                const input = document.getElementById(`input-${i}`);
+                if (input) {
+                    input.value = '';
+                    input.style.color = '#333';
+                    if (input.selectedTeam) {
+                        input.selectedTeam = null;
+                    }
+                }
+            }
 
             const shuffledTeams = [...teams].sort(() => Math.random() - 0.5);
 
+            // Set random teams
             for (let i = 0; i < 20; i++) {
-                const select = document.getElementById(`select-${i}`);
-                const teamName = shuffledTeams[i].name;
-                select.value = teamName;
-                selectedTeams[i] = teamName;
-                updateSelectColor(select, teamName);
-            }
-
-            selectedTeams.forEach((teamName, position) => {
-                if (teamName) {
-                    disableTeamInOtherDropdowns(teamName, position);
+                const input = document.getElementById(`input-${i}`);
+                
+                if (input) {
+                    const teamName = shuffledTeams[i].name;
+                    const team = teams.find(t => t.name === teamName);
+                    
+                    if (team) {
+                        input.value = teamName;
+                        input.style.color = team.color;
+                        input.selectedTeam = teamName;
+                        selectedTeams[i] = teamName;
+                    }
                 }
-            });
+            }
 
             updateHeaderText();
         }
 
         function clearAll() {
             selectedTeams = new Array(20).fill(null);
+
+            // Clear favorite club selection - REMOVE THIS PART
+            // const favoriteClubSelect = document.getElementById('favoriteClub');
+            // favoriteClubSelect.value = '';
+            // updateSelectColor(favoriteClubSelect, '');
 
             for (let i = 0; i < 20; i++) {
                 const select = document.getElementById(`select-${i}`);
@@ -720,9 +979,9 @@
                 winnerPoints.value = '';
             }
             
-            const loserPoints = document.getElementById('loserPoints');
-            if (loserPoints) {
-                loserPoints.value = '';
+            const relegationPoints = document.getElementById('relegationPoints');
+            if (relegationPoints) {
+                relegationPoints.value = '';
             }
 
             document.getElementById('finalTable').classList.add('hidden');
@@ -783,9 +1042,133 @@
             }, 500);
         }
 
+        function initializeFavoriteClub() {
+            const favoriteClubInput = document.getElementById('favoriteClub');
+            const favoriteClubOptions = document.getElementById('favoriteClubOptions');
+            let selectedFavoriteTeam = null;
+
+            // Populate options for favorite club
+            function populateFavoriteOptions(filter = '') {
+                favoriteClubOptions.innerHTML = '';
+                const filteredTeams = teams.filter(team => 
+                    team.name.toLowerCase().includes(filter.toLowerCase())
+                );
+
+                filteredTeams.forEach(team => {
+                    const option = document.createElement('div');
+                    option.className = 'dropdown-option';
+                    option.textContent = `⬤ ${team.name}`;
+                    option.style.color = team.color;
+                    option.setAttribute('data-team', team.name);
+                    option.setAttribute('data-color', team.color);
+
+                    option.addEventListener('click', function() {
+                        selectFavoriteTeam(team.name, team.color);
+                    });
+
+                    favoriteClubOptions.appendChild(option);
+                });
+
+                if (filteredTeams.length === 0 && filter) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'dropdown-option';
+                    noResults.textContent = 'No teams found';
+                    noResults.style.fontStyle = 'italic';
+                    noResults.style.color = '#666';
+                    favoriteClubOptions.appendChild(noResults);
+                }
+            }
+
+            function selectFavoriteTeam(teamName, teamColor) {
+                favoriteClubInput.value = teamName;
+                favoriteClubInput.style.color = teamColor;
+                selectedFavoriteTeam = teamName;
+                favoriteClubOptions.style.display = 'none';
+            }
+
+            // Event listeners for favorite club
+            favoriteClubInput.addEventListener('focus', function() {
+                populateFavoriteOptions(favoriteClubInput.value);
+                favoriteClubOptions.style.display = 'block';
+            });
+
+            favoriteClubInput.addEventListener('input', function() {
+                const filter = favoriteClubInput.value;
+                populateFavoriteOptions(filter);
+                favoriteClubOptions.style.display = 'block';
+                
+                // Clear selection if input doesn't match exactly
+                if (selectedFavoriteTeam && selectedFavoriteTeam !== filter) {
+                    selectedFavoriteTeam = null;
+                    favoriteClubInput.style.color = '#333';
+                }
+            });
+
+            favoriteClubInput.addEventListener('blur', function() {
+                setTimeout(() => {
+                    favoriteClubOptions.style.display = 'none';
+                    
+                    // If input doesn't match a valid team, clear it
+                    if (selectedFavoriteTeam !== favoriteClubInput.value) {
+                        const exactMatch = teams.find(team => team.name.toLowerCase() === favoriteClubInput.value.toLowerCase());
+                        if (exactMatch) {
+                            selectFavoriteTeam(exactMatch.name, exactMatch.color);
+                        } else {
+                            favoriteClubInput.value = selectedFavoriteTeam || '';
+                            favoriteClubInput.style.color = selectedFavoriteTeam ? teams.find(t => t.name === selectedFavoriteTeam)?.color || '#333' : '#333';
+                        }
+                    }
+                }, 200);
+            });
+
+            // Clear function for external access
+            favoriteClubInput.clearFavorite = function() {
+                selectedFavoriteTeam = null;
+                favoriteClubInput.value = '';
+                favoriteClubInput.style.color = '#333';
+            };
+        }
+
         document.getElementById('predictorName').addEventListener('input', updateHeaderText);
 
+        // Initialize everything
+        initializeFavoriteClub();
         createDropdowns();
+        
+        // Define safeClearAll as a global function
+        window.safeClearAll = function() {
+            try {
+                // Clear the selectedTeams array
+                selectedTeams = new Array(20).fill(null);
+                
+                // Rebuild the dropdowns from scratch
+                createDropdowns();
+                
+                // Re-initialize favorite club
+                initializeFavoriteClub();
+                
+                // Clear points manually
+                const winnerPointsEl = document.getElementById('winnerPoints');
+                const relegationPointsEl = document.getElementById('relegationPoints');
+                
+                if (winnerPointsEl) winnerPointsEl.value = '';
+                if (relegationPointsEl) relegationPointsEl.value = '';
+                
+                // Hide table
+                const finalTable = document.getElementById('finalTable');
+                const downloadBtn = document.getElementById('downloadBtn');
+                if (finalTable) finalTable.classList.add('hidden');
+                if (downloadBtn) downloadBtn.classList.add('hidden');
+                
+                // Update header
+                const header = document.getElementById('tableHeader');
+                if (header) header.textContent = 'Select teams for each position';
+                
+            } catch (error) {
+                console.error('Clear All Error:', error);
+                alert('Error clearing form: ' + error.message);
+            }
+        };
     </script>
 </body>
 </html>
