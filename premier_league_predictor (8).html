@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premier League Table Predictor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #37003c, #00ff85);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header-watermark {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            font-style: italic;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .name-input {
+            margin-bottom: 20px;
+        }
+        
+        .name-input label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #37003c;
+        }
+        
+        .name-input input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .name-input input:focus {
+            border-color: #37003c;
+            outline: none;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-generate {
+            background: #37003c;
+            color: white;
+        }
+        
+        .btn-generate:hover {
+            background: #2a0029;
+            transform: translateY(-2px);
+        }
+        
+        .btn-clear {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-clear:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+        
+        .btn-random {
+            background: #00ff85;
+            color: #37003c;
+        }
+        
+        .btn-random:hover {
+            background: #00e673;
+            transform: translateY(-2px);
+        }
+        
+        .btn-download {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-download:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        
+        .prediction-area {
+            padding: 30px;
+        }
+        
+        .table-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #37003c, #00ff85);
+            color: white;
+            border-radius: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .dropdown-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .position-select {
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 10px;
+            transition: all 0.3s;
+        }
+        
+        .position-select.first-place {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .position-select:hover {
+            border-color: #37003c;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .position-number {
+            background: #37003c;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 14px;
+        }
+        
+        .position-select select {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            cursor: pointer;
+            outline: none;
+        }
+        
+        .points-input {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 200px;
+            margin-top: 5px;
+        }
+        
+        .points-input label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #37003c;
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+        
+        .points-input input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 80px;
+        }
+        
+        .points-input input:focus {
+            border-color: #37003c;
+            outline: none;
+        }
+        
+        .final-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .watermark {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 12px;
+            color: #999;
+            opacity: 0.7;
+            font-style: italic;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .table-title {
+            background: linear-gradient(135deg, #37003c, #00ff85);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .table-content {
+            background: white;
+        }
+        
+        .table-row {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s;
+            position: relative;
+        }
+        
+        .table-row:hover {
+            background: #f8f9fa;
+        }
+        
+        .table-row:nth-child(-n+4)::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background-color: #00ff85;
+        }
+        
+        .table-row:nth-child(5)::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background-color: #ffa500;
+        }
+        
+        .table-row:nth-child(6)::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background-color: #87ceeb;
+        }
+        
+        .table-row:nth-last-child(-n+3)::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background-color: #ff6b6b;
+        }
+        
+        .position-final {
+            font-weight: bold;
+            font-size: 18px;
+            color: #37003c;
+            width: 40px;
+        }
+        
+        .team-info {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            margin-left: 20px;
+        }
+        
+        .team-color-badge {
+            width: 35px;
+            height: 35px;
+            margin-right: 15px;
+            border-radius: 6px;
+            border: 2px solid #ddd;
+            flex-shrink: 0;
+        }
+        
+        .team-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .dropdown-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-watermark">Created by Yean</div>
+            <h1>⚽ Premier League Predictor</h1>
+            <p>Create your own Premier League table prediction</p>
+        </div>
+        
+        <div class="controls">
+            <div class="name-input">
+                <label for="predictorName">Predictor Name:</label>
+                <input type="text" id="predictorName" placeholder="Enter name" />
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-random" onclick="randomizeTable()">🎲 Random Prediction</button>
+                <button class="btn btn-generate" onclick="generateTable()">📊 Generate Table</button>
+                <button class="btn btn-clear" onclick="clearAll()">🗑️ Clear All</button>
+                <button class="btn btn-download hidden" id="downloadBtn" onclick="downloadTableImage()">📷 Download Image</button>
+            </div>
+        </div>
+        
+        <div class="prediction-area">
+            <div class="table-header" id="tableHeader">Select teams for each position</div>
+            
+            <div class="dropdown-grid" id="dropdownGrid">
+                <!-- Dropdowns will be generated here -->
+            </div>
+            
+            <div class="final-table hidden" id="finalTable">
+                <div class="table-title" id="finalTableTitle">Prediction Table</div>
+                <div class="table-content" id="tableContent">
+                    <!-- Final table will be generated here -->
+                </div>
+                <div class="watermark">Created by Yean</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        const teams = [
+            { name: 'Arsenal', color: '#DC143C' },
+            { name: 'Aston Villa', color: '#95BFE5' },
+            { name: 'Bournemouth', color: '#DA020E' },
+            { name: 'Brentford', color: '#FF0000' },
+            { name: 'Brighton', color: '#0057B8' },
+            { name: 'Burnley', color: '#6C1D45' },
+            { name: 'Chelsea', color: '#034694' },
+            { name: 'Crystal Palace', color: '#1B458F' },
+            { name: 'Everton', color: '#003399' },
+            { name: 'Fulham', color: '#000000' },
+            { name: 'Leeds', color: '#FFFF00' },
+            { name: 'Liverpool', color: '#C8102E' },
+            { name: 'Manchester City', color: '#6CABDD' },
+            { name: 'Manchester United', color: '#DA020E' },
+            { name: 'Newcastle United', color: '#241F20' },
+            { name: 'Nottingham Forest', color: '#DD0000' },
+            { name: 'Sunderland', color: '#EB172B' },
+            { name: 'Tottenham', color: '#132257' },
+            { name: 'West Ham', color: '#7A263A' },
+            { name: 'Wolverhampton', color: '#FDB913' }
+        ];
+
+        let selectedTeams = new Array(20).fill(null);
+
+        function createDropdowns() {
+            const grid = document.getElementById('dropdownGrid');
+            grid.innerHTML = '';
+
+            for (let i = 0; i < 20; i++) {
+                const positionDiv = document.createElement('div');
+                positionDiv.className = i === 0 ? 'position-select first-place' : 'position-select';
+                
+                const positionNumber = document.createElement('div');
+                positionNumber.className = 'position-number';
+                positionNumber.textContent = i + 1;
+                
+                const select = document.createElement('select');
+                select.id = `select-${i}`;
+                select.addEventListener('change', function() {
+                    updateTeamSelection(i, this.value);
+                });
+                
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = i === 0 ? 'Select team for 1st place' : `Select team for position ${i + 1}`;
+                select.appendChild(defaultOption);
+                
+                teams.forEach(team => {
+                    const option = document.createElement('option');
+                    option.value = team.name;
+                    option.textContent = team.name;
+                    select.appendChild(option);
+                });
+                
+                positionDiv.appendChild(positionNumber);
+                
+                if (i === 0) {
+                    select.style.flex = '1';
+                    positionDiv.appendChild(select);
+                    
+                    const pointsDiv = document.createElement('div');
+                    pointsDiv.className = 'points-input';
+                    
+                    const pointsLabel = document.createElement('label');
+                    pointsLabel.setAttribute('for', 'winnerPoints');
+                    pointsLabel.textContent = 'Points to win:';
+                    
+                    const pointsInput = document.createElement('input');
+                    pointsInput.type = 'number';
+                    pointsInput.id = 'winnerPoints';
+                    pointsInput.placeholder = '90';
+                    pointsInput.min = '50';
+                    pointsInput.max = '120';
+                    
+                    pointsDiv.appendChild(pointsLabel);
+                    pointsDiv.appendChild(pointsInput);
+                    positionDiv.appendChild(pointsDiv);
+                } else {
+                    positionDiv.appendChild(select);
+                }
+                
+                grid.appendChild(positionDiv);
+            }
+        }
+
+        function updateTeamSelection(position, teamName) {
+            const previousTeam = selectedTeams[position];
+            selectedTeams[position] = teamName || null;
+
+            if (previousTeam) {
+                enableTeamInAllDropdowns(previousTeam);
+            }
+
+            if (teamName) {
+                disableTeamInOtherDropdowns(teamName, position);
+            }
+
+            updateHeaderText();
+        }
+
+        function disableTeamInOtherDropdowns(teamName, currentPosition) {
+            for (let i = 0; i < 20; i++) {
+                if (i !== currentPosition) {
+                    const select = document.getElementById(`select-${i}`);
+                    const options = select.querySelectorAll('option');
+                    options.forEach(option => {
+                        if (option.value === teamName) {
+                            option.disabled = true;
+                        }
+                    });
+                }
+            }
+        }
+
+        function enableTeamInAllDropdowns(teamName) {
+            for (let i = 0; i < 20; i++) {
+                const select = document.getElementById(`select-${i}`);
+                const options = select.querySelectorAll('option');
+                options.forEach(option => {
+                    if (option.value === teamName) {
+                        option.disabled = false;
+                    }
+                });
+            }
+        }
+
+        function updateHeaderText() {
+            const predictorName = document.getElementById('predictorName').value;
+            const header = document.getElementById('tableHeader');
+            
+            if (predictorName.trim()) {
+                header.textContent = `${predictorName}'s Premier League Prediction`;
+            } else {
+                header.textContent = 'Premier League Prediction';
+            }
+        }
+
+        function generateTable() {
+            const predictorName = document.getElementById('predictorName').value;
+            const winnerPoints = document.getElementById('winnerPoints').value;
+            const finalTable = document.getElementById('finalTable');
+            const finalTableTitle = document.getElementById('finalTableTitle');
+            const tableContent = document.getElementById('tableContent');
+
+            const emptyPositions = selectedTeams.filter(team => team === null).length;
+            if (emptyPositions > 0) {
+                alert(`Please select teams for all positions. ${emptyPositions} position(s) still empty.`);
+                return;
+            }
+
+            let titleText = predictorName.trim() ? `${predictorName}'s Premier League Prediction` : 'Premier League Prediction';
+            if (winnerPoints && winnerPoints.trim()) {
+                titleText += ` (Winner: ${winnerPoints} pts)`;
+            }
+            finalTableTitle.textContent = titleText;
+
+            tableContent.innerHTML = '';
+            selectedTeams.forEach((teamName, index) => {
+                const team = teams.find(t => t.name === teamName);
+                if (team) {
+                    const row = document.createElement('div');
+                    row.className = 'table-row';
+                    
+                    const position = document.createElement('div');
+                    position.className = 'position-final';
+                    position.textContent = index + 1;
+                    
+                    const teamInfo = document.createElement('div');
+                    teamInfo.className = 'team-info';
+                    
+                    const colorBadge = document.createElement('div');
+                    colorBadge.className = 'team-color-badge';
+                    colorBadge.style.backgroundColor = team.color;
+                    
+                    const teamName = document.createElement('span');
+                    teamName.className = 'team-name';
+                    teamName.textContent = team.name;
+                    
+                    teamInfo.appendChild(colorBadge);
+                    teamInfo.appendChild(teamName);
+                    
+                    row.appendChild(position);
+                    row.appendChild(teamInfo);
+                    
+                    if (index === 0 && winnerPoints && winnerPoints.trim()) {
+                        const pointsDisplay = document.createElement('span');
+                        pointsDisplay.style.marginLeft = 'auto';
+                        pointsDisplay.style.fontWeight = 'bold';
+                        pointsDisplay.style.color = '#37003c';
+                        pointsDisplay.textContent = `${winnerPoints} pts`;
+                        row.appendChild(pointsDisplay);
+                    }
+                    
+                    tableContent.appendChild(row);
+                }
+            });
+
+            finalTable.classList.remove('hidden');
+            document.getElementById('downloadBtn').classList.remove('hidden');
+            finalTable.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function randomizeTable() {
+            clearAll();
+
+            const shuffledTeams = [...teams].sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < 20; i++) {
+                const select = document.getElementById(`select-${i}`);
+                const teamName = shuffledTeams[i].name;
+                select.value = teamName;
+                selectedTeams[i] = teamName;
+            }
+
+            selectedTeams.forEach((teamName, position) => {
+                if (teamName) {
+                    disableTeamInOtherDropdowns(teamName, position);
+                }
+            });
+
+            updateHeaderText();
+        }
+
+        function clearAll() {
+            selectedTeams = new Array(20).fill(null);
+
+            for (let i = 0; i < 20; i++) {
+                const select = document.getElementById(`select-${i}`);
+                select.value = '';
+                
+                const options = select.querySelectorAll('option');
+                options.forEach(option => {
+                    option.disabled = false;
+                });
+            }
+            
+            const winnerPoints = document.getElementById('winnerPoints');
+            if (winnerPoints) {
+                winnerPoints.value = '';
+            }
+
+            document.getElementById('finalTable').classList.add('hidden');
+            document.getElementById('downloadBtn').classList.add('hidden');
+            
+            updateHeaderText();
+        }
+
+        function downloadTableImage() {
+            if (typeof html2canvas === 'undefined') {
+                alert('Screenshot feature is loading... Please wait a moment and try again.');
+                return;
+            }
+            
+            const finalTable = document.getElementById('finalTable');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const predictorName = document.getElementById('predictorName').value || 'Prediction';
+            
+            const originalText = downloadBtn.textContent;
+            downloadBtn.textContent = '📷 Generating...';
+            downloadBtn.disabled = true;
+            
+            setTimeout(() => {
+                html2canvas(finalTable, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: false,
+                    logging: false,
+                    width: finalTable.offsetWidth,
+                    height: finalTable.offsetHeight
+                }).then(function(canvas) {
+                    try {
+                        const link = document.createElement('a');
+                        const fileName = predictorName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                        link.download = `${fileName}_premier_league_prediction.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        
+                        downloadBtn.textContent = originalText;
+                        downloadBtn.disabled = false;
+                        
+                    } catch (error) {
+                        console.error('Download error:', error);
+                        alert('Download failed. Your browser may be blocking the download.');
+                        downloadBtn.textContent = originalText;
+                        downloadBtn.disabled = false;
+                    }
+                }).catch(function(error) {
+                    console.error('Canvas generation error:', error);
+                    alert('Could not generate image. Please try taking a manual screenshot.');
+                    downloadBtn.textContent = originalText;
+                    downloadBtn.disabled = false;
+                });
+            }, 500);
+        }
+
+        document.getElementById('predictorName').addEventListener('input', updateHeaderText);
+
+        createDropdowns();
+    </script>
+</body>
+</html>
