@@ -508,7 +508,7 @@
                 <!-- Dropdowns will be generated here -->
             </div>
             
-            <button class="btn btn-download hidden" id="downloadBtn" onclick="downloadTableImage()" style="width: 100%; margin-bottom: 20px;">📷 Download Image</button>
+            <button class="btn btn-download hidden" id="downloadBtn" onclick="downloadTableImage()" style="width: 100%; margin-bottom: 20px;">📷 Download Table Image</button>
             
             <div class="final-table hidden" id="finalTable">
                 <div class="table-border-wrapper">
@@ -890,31 +890,55 @@
             // Create gradient border using background and padding approach
             finalTable.style.background = 'linear-gradient(135deg, #37003c, #00ff85, #3498db)';
             finalTable.style.padding = '4px';
-            finalTable.style.borderRadius = '15px';
+            finalTable.style.borderRadius = '0';
             finalTable.style.border = 'none';
             finalTable.style.position = 'relative';
             finalTable.style.zIndex = '1000';
             finalTable.style.isolation = 'isolate';
             
-            // Make sure the inner content has the right background
+            // Make sure the inner content has clean edges
             const tableTitleEl = document.getElementById('finalTableTitle');
             const tableContentEl = document.getElementById('tableContent');
             if (tableTitleEl) {
                 tableTitleEl.style.margin = '0';
-                tableTitleEl.style.borderRadius = '11px 11px 0 0';
+                tableTitleEl.style.borderRadius = '0';
                 tableTitleEl.style.position = 'relative';
                 tableTitleEl.style.zIndex = '1001';
             }
             if (tableContentEl) {
                 tableContentEl.style.margin = '0';
-                tableContentEl.style.borderRadius = '0 0 11px 11px';
+                tableContentEl.style.borderRadius = '0';
                 tableContentEl.style.position = 'relative';
                 tableContentEl.style.zIndex = '1001';
                 tableContentEl.style.overflow = 'hidden';
             }
             
+            // Add website watermark
+            const websiteWatermark = document.createElement('div');
+            websiteWatermark.style.position = 'absolute';
+            websiteWatermark.style.bottom = '10px';
+            websiteWatermark.style.right = '15px';
+            websiteWatermark.style.fontSize = '11px';
+            websiteWatermark.style.color = 'rgba(236, 240, 241, 0.8)';
+            websiteWatermark.style.fontStyle = 'italic';
+            websiteWatermark.style.zIndex = '1002';
+            websiteWatermark.style.background = 'rgba(44, 62, 80, 0.7)';
+            websiteWatermark.style.padding = '2px 6px';
+            websiteWatermark.style.borderRadius = '3px';
+            websiteWatermark.textContent = 'blaise27.github.io/prem.predictor.io';
+            finalTable.appendChild(websiteWatermark);
+            
             document.getElementById('downloadBtn').classList.remove('hidden');
-            finalTable.scrollIntoView({ behavior: 'smooth' });
+            
+            // Scroll to show the download button at the top of the screen
+            setTimeout(() => {
+                const downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start',
+                    inline: 'nearest'
+                });
+            }, 100);
         }
 
         function randomizeTable() {
