@@ -170,7 +170,8 @@
             transition: all 0.3s;
         }
         
-        .position-select.first-place {
+        .position-select.first-place,
+        .position-select.last-place {
             flex-wrap: wrap;
             gap: 10px;
         }
@@ -201,6 +202,12 @@
             font-size: 16px;
             cursor: pointer;
             outline: none;
+            font-weight: bold;
+        }
+        
+        /* Custom styling for selected dropdown values */
+        .position-select select option {
+            font-weight: bold;
         }
         
         .points-input {
@@ -243,8 +250,8 @@
         
         .watermark {
             position: absolute;
-            bottom: 10px;
-            right: 15px;
+            top: 10px;
+            left: 15px;
             font-size: 12px;
             color: #999;
             opacity: 0.7;
@@ -262,6 +269,16 @@
             text-align: center;
             font-size: 1.8rem;
             font-weight: bold;
+            position: relative;
+        }
+        
+        .table-title-watermark {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            font-style: italic;
         }
         
         .table-content {
@@ -301,15 +318,7 @@
             background-color: #ffa500;
         }
         
-        .table-row:nth-child(6)::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 5px;
-            background-color: #87ceeb;
-        }
+
         
         .table-row:nth-last-child(-n+3)::before {
             content: '';
@@ -319,6 +328,14 @@
             bottom: 0;
             width: 5px;
             background-color: #ff6b6b;
+        }
+        
+        .table-row:nth-child(4) {
+            border-bottom: 3px solid #6c757d;
+        }
+        
+        .table-row:nth-child(17) {
+            border-bottom: 3px solid #6c757d;
         }
         
         .position-final {
@@ -391,7 +408,6 @@
                 <button class="btn btn-random" onclick="randomizeTable()">🎲 Random Prediction</button>
                 <button class="btn btn-generate" onclick="generateTable()">📊 Generate Table</button>
                 <button class="btn btn-clear" onclick="clearAll()">🗑️ Clear All</button>
-                <button class="btn btn-download hidden" id="downloadBtn" onclick="downloadTableImage()">📷 Download Image</button>
             </div>
         </div>
         
@@ -402,12 +418,16 @@
                 <!-- Dropdowns will be generated here -->
             </div>
             
+            <button class="btn btn-download hidden" id="downloadBtn" onclick="downloadTableImage()" style="width: 100%; margin-bottom: 20px;">📷 Download Image</button>
+            
             <div class="final-table hidden" id="finalTable">
-                <div class="table-title" id="finalTableTitle">Prediction Table</div>
+                <div class="table-title" id="finalTableTitle">
+                    <div class="table-title-watermark">Created by Yean</div>
+                    Prediction Table
+                </div>
                 <div class="table-content" id="tableContent">
                     <!-- Final table will be generated here -->
                 </div>
-                <div class="watermark">Created by Yean</div>
             </div>
         </div>
     </div>
@@ -445,7 +465,7 @@
 
             for (let i = 0; i < 20; i++) {
                 const positionDiv = document.createElement('div');
-                positionDiv.className = i === 0 ? 'position-select first-place' : 'position-select';
+                positionDiv.className = i === 0 ? 'position-select first-place' : (i === 19 ? 'position-select last-place' : 'position-select');
                 
                 const positionNumber = document.createElement('div');
                 positionNumber.className = 'position-number';
@@ -455,6 +475,7 @@
                 select.id = `select-${i}`;
                 select.addEventListener('change', function() {
                     updateTeamSelection(i, this.value);
+                    updateSelectColor(this, this.value);
                 });
                 
                 const defaultOption = document.createElement('option');
@@ -465,7 +486,9 @@
                 teams.forEach(team => {
                     const option = document.createElement('option');
                     option.value = team.name;
-                    option.textContent = team.name;
+                    option.textContent = `⬤ ${team.name}`;
+                    option.style.color = team.color;
+                    option.setAttribute('data-color', team.color);
                     select.appendChild(option);
                 });
                 
@@ -492,11 +515,43 @@
                     pointsDiv.appendChild(pointsLabel);
                     pointsDiv.appendChild(pointsInput);
                     positionDiv.appendChild(pointsDiv);
+                } else if (i === 19) {
+                    select.style.flex = '1';
+                    positionDiv.appendChild(select);
+                    
+                    const pointsDiv = document.createElement('div');
+                    pointsDiv.className = 'points-input';
+                    
+                    const pointsLabel = document.createElement('label');
+                    pointsLabel.setAttribute('for', 'loserPoints');
+                    pointsLabel.textContent = 'Points relegated:';
+                    
+                    const pointsInput = document.createElement('input');
+                    pointsInput.type = 'number';
+                    pointsInput.id = 'loserPoints';
+                    pointsInput.placeholder = '25';
+                    pointsInput.min = '0';
+                    pointsInput.max = '50';
+                    
+                    pointsDiv.appendChild(pointsLabel);
+                    pointsDiv.appendChild(pointsInput);
+                    positionDiv.appendChild(pointsDiv);
                 } else {
                     positionDiv.appendChild(select);
                 }
                 
                 grid.appendChild(positionDiv);
+            }
+        }
+
+        function updateSelectColor(select, teamName) {
+            if (teamName) {
+                const team = teams.find(t => t.name === teamName);
+                if (team) {
+                    select.style.color = team.color;
+                }
+            } else {
+                select.style.color = '#333';
             }
         }
 
@@ -555,6 +610,7 @@
         function generateTable() {
             const predictorName = document.getElementById('predictorName').value;
             const winnerPoints = document.getElementById('winnerPoints').value;
+            const loserPoints = document.getElementById('loserPoints').value;
             const finalTable = document.getElementById('finalTable');
             const finalTableTitle = document.getElementById('finalTableTitle');
             const tableContent = document.getElementById('tableContent');
@@ -566,10 +622,7 @@
             }
 
             let titleText = predictorName.trim() ? `${predictorName}'s Premier League Prediction` : 'Premier League Prediction';
-            if (winnerPoints && winnerPoints.trim()) {
-                titleText += ` (Winner: ${winnerPoints} pts)`;
-            }
-            finalTableTitle.textContent = titleText;
+            finalTableTitle.innerHTML = `<div class="table-title-watermark">Created by Yean</div>${titleText}`;
 
             tableContent.innerHTML = '';
             selectedTeams.forEach((teamName, index) => {
@@ -608,6 +661,15 @@
                         row.appendChild(pointsDisplay);
                     }
                     
+                    if (index === 19 && loserPoints && loserPoints.trim()) {
+                        const pointsDisplay = document.createElement('span');
+                        pointsDisplay.style.marginLeft = 'auto';
+                        pointsDisplay.style.fontWeight = 'bold';
+                        pointsDisplay.style.color = '#37003c';
+                        pointsDisplay.textContent = `${loserPoints} pts`;
+                        row.appendChild(pointsDisplay);
+                    }
+                    
                     tableContent.appendChild(row);
                 }
             });
@@ -627,6 +689,7 @@
                 const teamName = shuffledTeams[i].name;
                 select.value = teamName;
                 selectedTeams[i] = teamName;
+                updateSelectColor(select, teamName);
             }
 
             selectedTeams.forEach((teamName, position) => {
@@ -644,6 +707,7 @@
             for (let i = 0; i < 20; i++) {
                 const select = document.getElementById(`select-${i}`);
                 select.value = '';
+                updateSelectColor(select, '');
                 
                 const options = select.querySelectorAll('option');
                 options.forEach(option => {
@@ -654,6 +718,11 @@
             const winnerPoints = document.getElementById('winnerPoints');
             if (winnerPoints) {
                 winnerPoints.value = '';
+            }
+            
+            const loserPoints = document.getElementById('loserPoints');
+            if (loserPoints) {
+                loserPoints.value = '';
             }
 
             document.getElementById('finalTable').classList.add('hidden');
